@@ -2,6 +2,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const scrapeButton = document.getElementById("scrape-button");
   const videoList = document.getElementById("video-list");
 
+  // 고화질 이미지를 우선 시도하고 실패 시 저화질로 대체하는 함수
+  function getThumbnailUrl(video) {
+    const highQualityThumbnail = video.thumbnail.replace(
+      "hqdefault.jpg",
+      "maxresdefault.jpg"
+    );
+
+    // 이미지 객체 생성
+    const img = new Image();
+    img.src = highQualityThumbnail;
+
+    // 고화질 이미지가 없을 경우 저화질로 대체
+    img.onerror = function () {
+      img.src = video.thumbnail;
+    };
+
+    return img.src;
+  }
+
   // 버튼 클릭 시 스크래핑 시작
   scrapeButton.addEventListener("click", () => {
     console.log("Scrape button clicked.");
@@ -27,9 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
               const videoItem = document.createElement("div");
               videoItem.className = "video-item";
 
+              // 썸네일 이미지 처리
               const thumbnail = document.createElement("img");
               thumbnail.className = "thumbnail";
-              thumbnail.src = video.thumbnail;
+              thumbnail.src = getThumbnailUrl(video); // 동적 썸네일 URL 처리
 
               const title = document.createElement("span");
               title.textContent = video.title;
