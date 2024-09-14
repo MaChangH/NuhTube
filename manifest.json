@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Video Scraper",
+  "version": "1.0",
+  "description": "Scrapes video titles and thumbnails from YouTube.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "cookies",
+    "https://www.youtube.com/"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": ["https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
