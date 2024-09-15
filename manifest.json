@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Video Scraper",
+
   "version": "1.0",
   "description": "Scrapes video titles and thumbnails from YouTube.",
   "permissions": [
