@@ -11,14 +11,14 @@ function scrapeYouTubeVideos() {
     let thumbnailElement = video.querySelector("img"); // 기본 썸네일 검색
 
     // 만약 기본 썸네일이 없으면 'yt-core-image' 클래스를 가진 태그에서 찾기
-    if (!thumbnailElement || !thumbnailElement.src) {
-      console.log(
-        `Thumbnail not found for video ${
-          index + 1
-        }, trying alternative method...`
-      );
-      thumbnailElement = video.querySelector("img.yt-core-image");
-    }
+    //if (!thumbnailElement || !thumbnailElement.src) {
+    // console.log(
+    //  `Thumbnail not found for video ${
+    //   index + 1
+    // }, trying alternative method...`
+    //);
+    //thumbnailElement = video.querySelector("img.yt-core-image");
+    //}
 
     console.log(
       `Processing video ${index + 1}: title element found:`,
