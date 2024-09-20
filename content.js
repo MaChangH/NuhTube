@@ -160,7 +160,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       );
 
       // Use your YouTube API Key here
-      const apiKey = config.YOUTUBE_API_KEY;
+      const apiKey = "AIzaSyDf_SrIprVRsmmGxxjceWdVoGTJJpQ_0J0";
       console.log("Using API Key:", apiKey);
       try {
         const apiUrls = constructYouTubeAPIUrls(videoIDBatches, apiKey);
