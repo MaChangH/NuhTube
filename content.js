@@ -1,3 +1,4 @@
+import config from "./config";
 // Function to construct YouTube API URLs for each batch with commas replaced by '%'
 function constructYouTubeAPIUrls(videoIDBatches, apiKey) {
   console.log(
@@ -159,7 +160,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       );
 
       // Use your YouTube API Key here
-      const apiKey = "AIzaSyDf_SrIprVRsmmGxxjceWdVoGTJJpQ_0J0";
+      const apiKey = config.YOUTUBE_API_KEY;
+      console.log("Using API Key:", apiKey);
       try {
         const apiUrls = constructYouTubeAPIUrls(videoIDBatches, apiKey);
         console.log("chrome.runtime.onMessage: Constructed API URLs:", apiUrls);
