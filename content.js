@@ -1,4 +1,3 @@
-import config from "./config";
 // Function to construct YouTube API URLs for each batch with commas replaced by '%'
 function constructYouTubeAPIUrls(videoIDBatches, apiKey) {
   console.log(
