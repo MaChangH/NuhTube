@@ -52,7 +52,12 @@ function scrapeYouTubeVideos() {
 
     // Split videoIDs into chunks of 50
     for (let i = 0; i < videoIDs.length; i += batchSize) {
-      let batch = videoIDs.slice(i, i + batchSize).join(","); // Join IDs with commas
+      //let batch = videoIDs.slice(i, i + batchSize).join(","); // Join IDs with commas
+      let batch = videoIDs
+        .slice(i, i + batchSize)
+        .map((id) => id.trim())
+        .join(","); // Remove whitespace and join IDs with commas
+
       batches.push(batch); // Push the cleaned batch into the list
     }
 
@@ -85,3 +90,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 });
+// videoID Batches 써서 API 받아오기 ->
+// https://developers.google.com/youtube/v3/docs/videos/list
+// 위 내용 그대로 + 자막 -> 더 자세한 분류 생성하기
+// videoIDBatches 를 , 로 나눠놨는데 %로 바꿔서 사용해야함. url에 들어갈때는
