@@ -1,8 +1,33 @@
+// Function to construct YouTube API URLs for each batch with commas replaced by '%'
+function constructYouTubeAPIUrls(videoIDBatches, apiKey) {
+  console.log(
+    "constructYouTubeAPIUrls: Received videoIDBatches:",
+    videoIDBatches
+  );
+  try {
+    const urls = videoIDBatches.map(
+      (batch) =>
+        `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&id=${batch.replace(
+          /,/g,
+          "%"
+        )}&regionCode=kr&key=${apiKey}`
+    );
+    console.log("constructYouTubeAPIUrls: Constructed URLs:", urls);
+    return urls;
+  } catch (error) {
+    console.error("constructYouTubeAPIUrls: Error constructing URLs:", error);
+  }
+}
+
 // Function to scrape video data and split videoIDs for YouTube API
 function scrapeYouTubeVideos() {
-  console.log("Attempting to scrape videos from YouTube page...");
+  console.log(
+    "scrapeYouTubeVideos: Attempting to scrape videos from YouTube page..."
+  );
   const videos = document.querySelectorAll("ytd-rich-grid-media");
-  console.log(`Found ${videos.length} video elements on the page.`);
+  console.log(
+    `scrapeYouTubeVideos: Found ${videos.length} video elements on the page.`
+  );
 
   const videoData = [];
   const videoIDs = []; // Array to store video IDs
@@ -12,7 +37,13 @@ function scrapeYouTubeVideos() {
     const href = titleElement ? titleElement.getAttribute("href") : null;
 
     // Extracting the video ID from the href
-    const videoID = href ? href.split("v=")[1] : null; // Extract the part after 'v='
+    let videoID = href ? href.split("v=")[1] : null; // Extract the part after 'v='
+
+    // Check if the videoID contains '&', and if so, remove everything after '&'
+    if (videoID && videoID.includes("&")) {
+      videoID = videoID.split("&")[0]; // Keep only the part before '&'
+    }
+
     if (videoID) {
       videoIDs.push(videoID); // Add videoID to the list
     }
@@ -44,6 +75,10 @@ function scrapeYouTubeVideos() {
       });
     }
   });
+  // Remove videoIDs that contain 'start_radio'
+  // videoIDs = videoIDs.filter((id) => !id.includes("start_radio"));
+  console.log("scrapeYouTubeVideos: Scraped videoData:", videoData);
+  console.log("scrapeYouTubeVideos: Scraped videoIDs:", videoIDs);
 
   // Splitting videoIDs into batches of 50 for the YouTube API
   const splitVideoIDsForAPI = (videoIDs) => {
@@ -52,11 +87,11 @@ function scrapeYouTubeVideos() {
 
     // Split videoIDs into chunks of 50
     for (let i = 0; i < videoIDs.length; i += batchSize) {
-      //let batch = videoIDs.slice(i, i + batchSize).join(","); // Join IDs with commas
       let batch = videoIDs
         .slice(i, i + batchSize)
         .map((id) => id.trim())
-        .join(","); // Remove whitespace and join IDs with commas
+        .join("%2C"); // Remove whitespace and join IDs with commas
+      // , 로 연결한걸 %2C 로 변경.
 
       batches.push(batch); // Push the cleaned batch into the list
     }
@@ -65,13 +100,53 @@ function scrapeYouTubeVideos() {
   };
 
   const videoIDBatches = splitVideoIDsForAPI(videoIDs); // Get batches of 50 video IDs
-
-  console.log("List of video ID batches for YouTube API:", videoIDBatches);
-  console.log("Final scraped video data:", videoData);
+  console.log("scrapeYouTubeVideos: videoIDBatches:", videoIDBatches);
 
   return { videoData, videoIDBatches }; // Return both video data and the batched video IDs
 }
 
+// Function to fetch and parse video data from YouTube API
+async function fetchVideoDataFromYouTube(apiUrls) {
+  console.log("fetchVideoDataFromYouTube: Fetching data for URLs:", apiUrls);
+  let fetchedVideoData = [];
+
+  // Fetch data for each URL (each batch)
+  for (let url of apiUrls) {
+    try {
+      console.log(`fetchVideoDataFromYouTube: Fetching data from URL: ${url}`);
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("fetchVideoDataFromYouTube: Fetched data:", data);
+
+      // Check if the response contains the video data
+      if (data && data.items && data.items.length > 0) {
+        data.items.forEach((item) => {
+          const video = {
+            title: item.snippet.title,
+            description: item.snippet.description,
+            publishedAt: item.snippet.publishedAt,
+            thumbnails: item.snippet.thumbnails.default.url,
+            channelTitle: item.snippet.channelTitle,
+          };
+          fetchedVideoData.push(video);
+        });
+      }
+    } catch (error) {
+      console.error(
+        "fetchVideoDataFromYouTube: Error fetching video data from YouTube API:",
+        error
+      );
+    }
+  }
+
+  console.log(
+    "fetchVideoDataFromYouTube: Fetched video data:",
+    fetchedVideoData
+  );
+  return fetchedVideoData;
+}
+
+// Chrome runtime message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Message received in content script:", request);
 
@@ -79,18 +154,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const { videoData, videoIDBatches } = scrapeYouTubeVideos(); // Destructure return values
 
     if (videoData.length > 0) {
-      console.log("Sending scraped video data and video ID batches:", {
-        videoData,
-        videoIDBatches,
-      });
-      sendResponse({ videos: videoData, videoIDBatches: videoIDBatches }); // Send both data and batches
+      console.log(
+        "chrome.runtime.onMessage: Scraping completed. Constructing API URLs."
+      );
+
+      // Use your YouTube API Key here
+      const apiKey = "AIzaSyDf_SrIprVRsmmGxxjceWdVoGTJJpQ_0J0";
+      try {
+        const apiUrls = constructYouTubeAPIUrls(videoIDBatches, apiKey);
+        console.log("chrome.runtime.onMessage: Constructed API URLs:", apiUrls);
+
+        // Fetch video details from YouTube API
+        fetchVideoDataFromYouTube(apiUrls).then((fetchedData) => {
+          console.log(
+            "chrome.runtime.onMessage: Fetched video details from YouTube API:",
+            fetchedData
+          );
+          sendResponse({ videos: fetchedData, videoIDBatches: videoIDBatches }); // Send both data and batches
+        });
+      } catch (error) {
+        console.error(
+          "chrome.runtime.onMessage: Error in constructing API URLs:",
+          error
+        );
+        sendResponse({
+          videos: [],
+          videoIDBatches: [],
+          error: "URL Construction Failed",
+        });
+      }
     } else {
-      console.log("No videos found to scrape.");
+      console.log("chrome.runtime.onMessage: No videos found to scrape.");
       sendResponse({ videos: [], videoIDBatches: [] });
     }
   }
+
+  return true; // Keep the messaging channel open for async response
 });
-// videoID Batches 써서 API 받아오기 ->
-// https://developers.google.com/youtube/v3/docs/videos/list
-// 위 내용 그대로 + 자막 -> 더 자세한 분류 생성하기
-// videoIDBatches 를 , 로 나눠놨는데 %로 바꿔서 사용해야함. url에 들어갈때는
