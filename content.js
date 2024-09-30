@@ -42,6 +42,15 @@ function scrapeYouTubeVideos() {
     console.log(
       `4. Found ${videos.length} video elements on the video watch page.`
     );
+  } else if (currentURL.includes("youtube.com/results?search_query=")) {
+    // 검색 결과 페이지일 때
+    console.log(
+      "3. Current URL is a search results page. Using search results page selectors."
+    );
+    videos = document.querySelectorAll("ytd-video-renderer");
+    console.log(
+      `4. Found ${videos.length} video elements on the search results page.`
+    );
   } else {
     // 일반 YouTube 메인 또는 탐색 페이지일 때
     console.log(
@@ -81,6 +90,28 @@ function scrapeYouTubeVideos() {
       }
 
       publisherElement = video.querySelector("yt-formatted-string#text");
+      publisherName = publisherElement
+        ? publisherElement.innerText.trim()
+        : "No publisher";
+      publisherLink = linkElement
+        ? `https://www.youtube.com${linkElement.getAttribute("href")}`
+        : "No publisher link";
+
+      thumbnailElement = video.querySelector("img");
+    } else if (currentURL.includes("youtube.com/results?search_query=")) {
+      console.log("6. Using search results page selectors for video metadata.");
+      titleElement = video.querySelector(
+        "yt-formatted-string.style-scope.ytd-video-renderer"
+      );
+      const linkElement = video.querySelector("a#video-title");
+      href = linkElement ? linkElement.getAttribute("href") : null;
+      videoID = href ? href.split("v=")[1] : null;
+
+      if (videoID && videoID.includes("&")) {
+        videoID = videoID.split("&")[0]; // videoID에서 & 이후 제거
+      }
+
+      publisherElement = video.querySelector("yt-formatted-string#byline");
       publisherName = publisherElement
         ? publisherElement.innerText.trim()
         : "No publisher";
