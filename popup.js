@@ -6,54 +6,49 @@ document.addEventListener("DOMContentLoaded", () => {
   scrapeButton.addEventListener("click", () => {
     console.log("Scrape button clicked.");
 
-    // 현재 활성 탭에 스크래핑 요청을 보냄
+    // 현재 활성 탭의 URL 확인
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      console.log(
-        "Sending scrape message to content script in tab:",
-        tabs[0].id
-      );
+      const currentTab = tabs[0];
+      const url = currentTab.url;
+      console.log("Current URL:", url);
 
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { action: "scrape_videos" },
-        (response) => {
-          console.log("Received response from content script:", response);
+      let action = "scrape_videos"; // 기본 액션 (메인 페이지)
 
-          if (response && response.videos && response.videos.length > 0) {
-            console.log("Videos found:", response.videos.length);
+      // URL이 특정 동영상 페이지라면 추천 동영상 스크랩하도록 액션 변경
+      if (url && url.match(/^https:\/\/www\.youtube\.com\/watch\?v=/)) {
+        action = "scrape_recommended_videos";
+      }
 
-            videoList.innerHTML = ""; // 기존 목록 초기화
-            response.videos.forEach((video) => {
-              // 비디오 데이터 확인
-              console.log("Video data:", video);
+      console.log("Sending message with action:", action);
 
-              const videoItem = document.createElement("div");
-              videoItem.className = "video-item";
+      // 현재 활성 탭에 스크래핑 요청을 보냄
+      chrome.tabs.sendMessage(currentTab.id, { action: action }, (response) => {
+        console.log("Received response from content script:", response);
 
-              // 비디오 썸네일 URL이 존재하는지 확인
-              if (video.thumbnail) {
-                console.log("Thumbnail found:", video.thumbnail);
-              } else {
-                console.error("Thumbnail not found for video:", video);
-              }
+        if (response && response.videos && response.videos.length > 0) {
+          console.log("Videos found:", response.videos.length);
 
-              const thumbnail = document.createElement("img");
-              thumbnail.className = "thumbnail";
-              thumbnail.src = video.thumbnails || ""; // 썸네일 URL 설정, 없으면 빈 문자열
+          videoList.innerHTML = ""; // 기존 목록 초기화
+          response.videos.forEach((video) => {
+            const videoItem = document.createElement("div");
+            videoItem.className = "video-item";
 
-              const title = document.createElement("span");
-              title.textContent = video.title;
+            const thumbnail = document.createElement("img");
+            thumbnail.className = "thumbnail";
+            thumbnail.src = video.thumbnail || ""; // 썸네일 URL 설정, 없으면 빈 문자열
 
-              videoItem.appendChild(thumbnail);
-              videoItem.appendChild(title);
-              videoList.appendChild(videoItem);
-            });
-          } else {
-            console.log("No videos found.");
-            videoList.textContent = "No videos found.";
-          }
+            const title = document.createElement("span");
+            title.textContent = video.title;
+
+            videoItem.appendChild(thumbnail);
+            videoItem.appendChild(title);
+            videoList.appendChild(videoItem);
+          });
+        } else {
+          console.log("No videos found.");
+          videoList.textContent = "No videos found.";
         }
-      );
+      });
     });
   });
 });
