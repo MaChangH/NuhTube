@@ -24,12 +24,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
             videoList.innerHTML = ""; // 기존 목록 초기화
             response.videos.forEach((video) => {
+              // 비디오 데이터 확인
+              console.log("Video data:", video);
+
               const videoItem = document.createElement("div");
               videoItem.className = "video-item";
 
+              // 비디오 썸네일 URL이 존재하는지 확인
+              if (video.thumbnail) {
+                console.log("Thumbnail found:", video.thumbnail);
+              } else {
+                console.error("Thumbnail not found for video:", video);
+              }
+
               const thumbnail = document.createElement("img");
               thumbnail.className = "thumbnail";
-              thumbnail.src = video.thumbnail;
+              thumbnail.src = video.thumbnails || ""; // 썸네일 URL 설정, 없으면 빈 문자열
 
               const title = document.createElement("span");
               title.textContent = video.title;
